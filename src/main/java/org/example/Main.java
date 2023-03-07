@@ -20,41 +20,27 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         executorService = createExecutorService();
+
+
         for (int index = 0; index < 10; index++) {
-            testInterruptedException(index);
+            testExecutionException(index);
         }
 
-//        for (int index = 0; index < 10; index++) {
-//            testExecutionException(index);
-//        }
-//        for (int index = 0; index < 10; index++) {
-//            testTimeoutExceptionWithNotInterruptedTask(index);
-//        }
+        for (int index = 0; index < 10; index++) {
+            testTimeoutExceptionWithInterruptableTask(index);
+        }
 
-//        for (int index = 0; index < 10; index++) {
-//            testTimeoutExceptionWithInterruptedTask(index);
-//        }
+        // This is going to leak threads
+        for (int index = 0; index < 10; index++) {
+            testTimeoutExceptionWithNotInterruptableTask(index);
+        }
+
         System.out.println("\n\nThread Dump");
         Thread.getAllStackTraces().keySet()
                 .forEach((t) -> System.out.println(t.getName() + " Is Daemon " + t.isDaemon() + " Is Alive " + t.isAlive()));
         System.in.read();
     }
 
-    static void testInterruptedException(int index) {
-        Future<?> future = executorService.submit((Runnable) () -> {
-            Thread.currentThread().interrupt();
-        });
-        try {
-            future.get(10, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            throw new RuntimeException(exception);
-        } catch (ExecutionException exception) {
-            System.out.println("ExecutionException occurred in testInterruptedException " + index);
-        } catch (TimeoutException exception) {
-            System.out.println("Timeout occurred in testInterruptedException " + index);
-            future.cancel(true);
-        }
-    }
 
     static void testExecutionException(int index) {
         Future<?> future = executorService.submit((Runnable) () -> {
@@ -62,34 +48,29 @@ public class Main {
         });
         try {
             future.get(10, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            throw new RuntimeException(exception);
+        } catch (InterruptedException | TimeoutException exception) {
+            System.out.println("dException is not expected in testExecutionException " + index);
         } catch (ExecutionException exception) {
             System.out.println("ExecutionException occurred in testExecutionException " + index);
-        } catch (TimeoutException exception) {
-            System.out.println("Timeout occurred in testExecutionException " + index);
-            future.cancel(true);
         }
     }
 
-    static void testTimeoutExceptionWithInterruptedTask(int index) {
+    static void testTimeoutExceptionWithInterruptableTask(int index) {
         Future<?> future = executorService.submit(() -> {
             try {
                 Thread.sleep(10_000);
-                System.out.println("executing testTimeoutExceptionWithInterruptedTask " + index);
+                System.out.println("executing testTimeoutExceptionWithInterruptableTask " + index);
             } catch (Exception exception) {
-                System.out.println("Exception in testTimeoutExceptionWithInterruptedTask " + index + " " + exception
+                System.out.println("Exception in testTimeoutExceptionWithInterruptableTask " + index + " " + exception
                 );
             }
         });
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            throw new RuntimeException(exception);
-        } catch (ExecutionException exception) {
-            throw new RuntimeException(exception);
+        } catch (InterruptedException | ExecutionException exception) {
+            System.out.println("Exception is not expected in testTimeoutExceptionWithInterruptableTask " + index);
         } catch (TimeoutException e) {
-            System.out.println("Timeout occurred in testTimeoutExceptionWithInterruptedTask " + index);
+            System.out.println("Timeout occurred in testTimeoutExceptionWithInterruptableTask " + index);
             future.cancel(true);
             executorService.shutdownNow();
 
@@ -97,24 +78,22 @@ public class Main {
         }
     }
 
-    static void testTimeoutExceptionWithNotInterruptedTask(int index) {
+    static void testTimeoutExceptionWithNotInterruptableTask(int index) {
         Future<?> future = executorService.submit(() -> {
             try {
                 System.in.read();
-                System.out.println("executing testTimeoutExceptionWithNotInterruptedTask " + index);
+                System.out.println("executing testTimeoutExceptionWithNotInterruptableTask " + index);
             } catch (Exception exception) {
-                System.out.println("Exception in testTimeoutExceptionWithNotInterruptedTask " + index + " " + exception
+                System.out.println("Exception in testTimeoutExceptionWithNotInterruptableTask " + index + " " + exception
                 );
             }
         });
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            throw new RuntimeException(exception);
-        } catch (ExecutionException exception) {
-            throw new RuntimeException(exception);
+        } catch (InterruptedException | ExecutionException exception) {
+            System.out.println("Exception is not expected in testTimeoutExceptionWithNotInterruptableTask " + index);
         } catch (TimeoutException exception) {
-            System.out.println("Timeout occurred in testTimeoutExceptionWithNotInterruptedTask " + index);
+            System.out.println("Timeout occurred in testTimeoutExceptionWithNotInterruptableTask " + index);
             future.cancel(true);
             executorService.shutdownNow();
 
