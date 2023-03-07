@@ -21,6 +21,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         executorService = createExecutorService();
 
+        //testInterruptedException (0);
 
         for (int index = 0; index < 10; index++) {
             testExecutionException(index);
@@ -41,6 +42,32 @@ public class Main {
         System.in.read();
     }
 
+//    static void testInterruptedException(int index) {
+//        Future<?> future = executorService.submit(() -> {
+//            try {
+//                Thread.sleep(10_000);
+//            } catch (Exception exception) {
+//                Thread.currentThread().interrupt();
+//            }
+//        });
+//        try {
+//            Thread.sleep(1_000);
+//        } catch (Exception exception) {
+//            Thread.currentThread().interrupt();
+//        }
+//        executorService.shutdown();
+//        try {
+//            future.get();
+//        } catch (InterruptedException  exception) {
+//            System.out.println("dException is not expected in testExecutionException " + index);
+//        } catch (ExecutionException exception) {
+//            System.out.println("ExecutionException occurred in testExecutionException " + index);
+//        } catch (Exception exception) {
+//            System.out.println("ExecutionException occurred in testExecutionException " + index);
+//        }
+//        executorService = createExecutorService();
+//    }
+
 
     static void testExecutionException(int index) {
         Future<?> future = executorService.submit((Runnable) () -> {
@@ -49,7 +76,7 @@ public class Main {
         try {
             future.get(10, TimeUnit.SECONDS);
         } catch (InterruptedException | TimeoutException exception) {
-            System.out.println("dException is not expected in testExecutionException " + index);
+            System.out.println("Exception is not expected in testExecutionException " + index);
         } catch (ExecutionException exception) {
             System.out.println("ExecutionException occurred in testExecutionException " + index);
         }
